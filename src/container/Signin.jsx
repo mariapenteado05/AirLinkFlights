@@ -2,32 +2,58 @@ import { useState } from "react";
 import { MdOutlineClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext"; // 🔹 Importa o contexto de autenticação
 
 const Signin = ({ signin, setSignin }) => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // 🔹 Função login() do AuthContext
 
   const [username, setUsername] = useState("");
   const [senha, setSenha] = useState("");
 
   const handleSubmit = (e) => {
-    e.preventDefault(); // impede recarregar a página
+    e.preventDefault();
 
     if (username.trim() === "" || senha.trim() === "") {
       toast.warning("Por favor, preencha todos os campos!");
       return;
     }
 
-    toast.success("Login realizado com sucesso!");
-    setTimeout(() => {
-      setSignin(false); 
-      navigate("/"); // redireciona para home
-    }, 1000); // pequeno delay para a toast aparecer
+    // 🔹 Exemplo simples de autenticação fake
+    // Você pode trocar por uma chamada de API depois.
+    let userData;
+
+    if (username === "admin" && senha === "admin123") {
+      userData = {
+        username: "Administrador",
+        role: "admin",
+        email: "admin@airlink.com",
+      };
+      toast.success("Bem-vindo, administrador!");
+      login(userData); // salva no contexto e localStorage
+      setTimeout(() => {
+        setSignin(false);
+        navigate("/admin-dash"); // redireciona pro painel admin
+      }, 800);
+    } else {
+      userData = {
+        username,
+        role: "user",
+        email: `${username}@airlink.com`,
+      };
+      toast.success("Login realizado com sucesso!");
+      login(userData);
+      setTimeout(() => {
+        setSignin(false);
+        navigate("/user"); // redireciona para página de usuário
+      }, 800);
+    }
   };
 
   const handleGoToSignUp = (e) => {
-    e.preventDefault(); // impede reload
-    setSignin(false); // fecha o modal
-    navigate("/signup"); // vai para página de cadastro
+    e.preventDefault();
+    setSignin(false);
+    navigate("/signup");
   };
 
   return (
@@ -39,7 +65,7 @@ const Signin = ({ signin, setSignin }) => {
         </h1>
         <MdOutlineClose
           className="text-[#6E7491] cursor-pointer"
-          onClick={() => setSignin(false)} // fecha o modal
+          onClick={() => setSignin(false)}
         />
       </header>
 
@@ -61,7 +87,6 @@ const Signin = ({ signin, setSignin }) => {
           className="input"
         />
 
-        {/* BOTÃO LOGIN */}
         <button
           type="submit"
           className="w-full bg-[#605DEC] text-[#FAFAFA] rounded py-3 hover:opacity-90 transition"

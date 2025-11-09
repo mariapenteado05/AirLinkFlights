@@ -11,28 +11,48 @@ import {
   Support,
   User,
   Home,
+  AdminDashboard,
 } from "./pages";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { ProtectedRoute } from "./ProtectedRoute";
 
 const App = () => {
   return (
-    <>
-      <div className="font-Nunito overflow-hidden max-w-[1440px] mx-auto">
-        {/* Navbar */}
-        <Navbar />
+    <div className="font-Nunito overflow-hidden max-w-[1440px] mx-auto bg-[#FAFAFA]">
+      {/* Navbar */}
+      <Navbar />
 
-        {/* Conteúdo das rotas */}
+      {/* Conteúdo das rotas */}
+      <div className="min-h-[80vh]">
         <Routes>
+          {/* Públicas */}
           <Route path="/" element={<Home />} />
           <Route path="/support" element={<Support />} />
-          <Route path="/user" element={<User />} />
           <Route path="/explore" element={<FlightExplore />} />
           <Route path="/passenger-info" element={<PassengerInfo />} />
           <Route path="/seat-selection" element={<SeatSelect />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/confirm" element={<Confirm />} />
           <Route path="/signup" element={<SignUp />} />
+
+          {/* Protegidas */}
+          <Route
+            path="/user"
+            element={
+              <ProtectedRoute role="user">
+                <User />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-dash"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Rota padrão */}
           <Route
@@ -44,25 +64,25 @@ const App = () => {
             }
           />
         </Routes>
-
-        {/* Footer fixo no final */}
-        <Footer />
-
-        {/* Toast (mensagens de sucesso, erro etc.) */}
-        <ToastContainer
-          position="bottom-center"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
       </div>
-    </>
+
+      {/* Footer fixo no final */}
+      <Footer />
+
+      {/* Toast */}
+      <ToastContainer
+        position="bottom-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </div>
   );
 };
 

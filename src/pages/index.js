@@ -7,6 +7,8 @@ import SeatSelect from "./SeatSelect";
 import Payment from "./Payment";
 import Confirm from "./Confirm";
 import SignUp from "./SignUp"; 
+import AdminDashboard from "./AdminDashboard";
+import { AirportsAdm } from "../components";
 
 export {
   Home,
@@ -18,4 +20,6 @@ export {
   Payment,
   Confirm,
   SignUp, 
+  AdminDashboard,
+  AirportsAdm,
 };
