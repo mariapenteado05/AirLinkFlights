@@ -1,74 +1,54 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { plane2 } from "../assets/images";
 
 const SeatSelect = () => {
-  // Criando fileiras (1 a 19)
+  const location = useLocation();
+  const { passengers } = location.state || { passengers: [] };
+  const totalSeatsToSelect = passengers.length;
+
   const totalRows = 19;
   const seatRows = Array.from({ length: totalRows }, (_, i) => i + 1);
+  const getSeatCols = (row) => (row <= 2 ? ["A", "B", "C", "D"] : ["A", "B", "C", "D", "E", "F"]);
 
-  // Define quais letras de assento cada fileira tem
-  const getSeatCols = (row) => {
-    return row <= 2 ? ["A", "B", "C", "D"] : ["A", "B", "C", "D", "E", "F"];
-  };
+  // 🔹 Assentos ocupados fixos
+  const occupiedSeats = ["1A", "1B", "2C", "5D", "6F", "10A", "12C", "15E"];
 
-  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
 
-  // Função para selecionar/desmarcar assento
   const handleSeatClick = (seat) => {
-    setSelectedSeat((prevSeat) => (prevSeat === seat ? null : seat));
+    setSelectedSeats((prev) => {
+      if (prev.includes(seat)) {
+        return prev.filter((s) => s !== seat);
+      } else if (prev.length < totalSeatsToSelect) {
+        return [...prev, seat];
+      } else {
+        return prev; // não permite selecionar mais do que o permitido
+      }
+    });
   };
 
   return (
     <div className="px-4 sm:px-8 w-full h-full flex flex-col lg:flex-row justify-between items-start gap-10 mt-20">
-      {/* Imagem lateral (avião) */}
       <div className="relative w-full h-full mx-auto lg:mx-0 sm:w-[400px] sm:h-[850px]">
         <img src={plane2} alt="avião" className="w-full h-full object-contain" />
       </div>
 
-      {/* Painel de seleção */}
       <div className="w-full h-full md:w-[712px] md:h-[850px] bg-white bg-opacity-20 flex flex-col mt-5 gap-10 border-[1px] border-[#f2f0f0] justify-between">
-        {/* Cabeçalho da viagem */}
-        <div className="w-full h-20 flex justify-between items-center bg-[#27273F]">
-          <div className="h-full w-full flex flex-col items-start justify-center px-4">
-            <h1 className="text-[#FAFAFA] text-base md:text-xl font-bold">SFO</h1>
-            <p className="text-[#E9E8FC] text-xs">Califórnia, EUA</p>
-          </div>
-          <div className="h-full w-full flex flex-col items-start justify-center px-4">
-            <h1 className="text-[#FAFAFA] text-base md:text-xl font-bold">NRT</h1>
-            <p className="text-[#E9E8FC] text-xs">Tóquio, Japão</p>
-          </div>
-          <div className="h-full w-full flex flex-col items-start justify-center px-4 hover:bg-[#605DEC] transition-all duration-200">
-            <h1 className="text-[#FAFAFA] text-xs sm:text-sm md:text-base font-normal">
-              25 Fev | 7:00
-            </h1>
-            <p className="text-[#E9E8FC] text-xs">Partida</p>
-          </div>
-          <div className="h-full w-full flex flex-col items-start justify-center px-4 hover:bg-[#605DEC] transition-all duration-200">
-            <h1 className="text-[#FAFAFA] text-xs sm:text-sm md:text-base font-normal">
-              21 Mar | 12:15
-            </h1>
-            <p className="text-[#E9E8FC] text-xs">Chegada</p>
-          </div>
-        </div>
-
+        
         {/* Mapa de assentos */}
         <div className="flex flex-col items-center justify-start w-full gap-3 mt-5 p-2">
           <h2 className="text-[#6E7491] text-xl font-semibold mb-2">
-            Selecione seu assento
+            Selecione seus assentos ({selectedSeats.length}/{totalSeatsToSelect})
           </h2>
 
-          {/* Container com rolagem independente */}
           <div className="w-full max-w-[600px] bg-gray-100 rounded-lg shadow-inner p-4 overflow-y-auto max-h-[600px]">
             {seatRows.map((row) => (
-              <div
-                key={row}
-                className="flex justify-center items-center gap-2 flex-wrap mb-2"
-              >
+              <div key={row} className="flex justify-center items-center gap-2 flex-wrap mb-2">
                 {getSeatCols(row).map((col) => {
                   const seat = `${row}${col}`;
-                  const isSelected = seat === selectedSeat;
-                  const isUnavailable = Math.random() < 0.08; // 8% dos assentos indisponíveis
+                  const isSelected = selectedSeats.includes(seat);
+                  const isUnavailable = occupiedSeats.includes(seat);
 
                   return (
                     <button
@@ -92,57 +72,40 @@ const SeatSelect = () => {
             ))}
           </div>
 
-          {/* Texto do assento selecionado */}
-          <p className="text-[#7C8DB0] text-sm mt-3">
-            {selectedSeat ? (
-              <>
-                Assento selecionado:{" "}
-                <span className="text-[#605DEC] font-semibold">{selectedSeat}</span>
-              </>
-            ) : (
-              "Nenhum assento selecionado"
-            )}
-          </p>
+          {/* Mostra assentos selecionados e passageiros */}
+          <div className="mt-3 text-[#7C8DB0] text-sm">
+            {selectedSeats.map((seat, idx) => (
+              <p key={seat}>
+                {passengers[idx]}: <span className="text-[#605DEC] font-semibold">{seat}</span>
+              </p>
+            ))}
+          </div>
         </div>
 
         {/* Rodapé */}
-        <div className="w-full h-[93px] border-t border-[#f2f0f0] flex justify-between items-center px-4 gap-3">
-          <div className="flex flex-col items-start gap-1">
-            <p className="text-[#7C8DB0] text-xs sm:text-sm">Passageiro 1</p>
-            <h1 className="text-[#6E7491] text-sm sm:text-xl">Wesley Safadão</h1>
-          </div>
-          <div className="flex flex-col items-start gap-1">
-            <p className="text-[#7C8DB0] text-xs sm:text-sm">Número do assento</p>
-            <h1 className="text-[#6E7491] text-sm sm:text-xl">
-              {selectedSeat || "—"}
-            </h1>
-          </div>
-          <div className="flex flex-row items-center gap-3">
+        <div className="w-full h-[93px] border-t border-[#f2f0f0] flex justify-end items-center px-4 gap-3">
+          <Link
+            to={selectedSeats.length === totalSeatsToSelect ? "/payment" : "#"}
+            state={{ 
+              selectedSeats,
+              passengers,
+              flight: location.state?.flight || null,  // pega o voo
+              totalPassengers: totalSeatsToSelect
+            }}
+          >
             <button
-              disabled={!selectedSeat}
-              className={`hidden sm:block border-[1px] p-2 sm:px-3 sm:py-2 rounded text-xs sm:text-base transition-all duration-200
-              ${
-                selectedSeat
-                  ? "text-[#605DEC] border-[#605DEC] hover:bg-[#605DEC] hover:text-white"
-                  : "text-gray-400 border-gray-300 cursor-not-allowed"
-              }`}
-            >
-              Salvar e Fechar
-            </button>
-            <Link to={selectedSeat ? "/payment" : "#"}>
-              <button
-                disabled={!selectedSeat}
-                className={`border-[1px] p-2 sm:px-3 sm:py-2 rounded text-xs sm:text-base transition-all duration-200
+              disabled={selectedSeats.length !== totalSeatsToSelect}
+              className={`border-[1px] p-2 sm:px-3 sm:py-2 rounded text-xs sm:text-base transition-all duration-200
                 ${
-                  selectedSeat
+                  selectedSeats.length === totalSeatsToSelect
                     ? "bg-[#605DEC] text-white border-[#605DEC] hover:bg-white hover:text-[#605DEC]"
                     : "bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
                 }`}
-              >
-                Pagamento
-              </button>
-            </Link>
-          </div>
+            >
+              Pagamento
+            </button>
+          </Link>
+              
         </div>
       </div>
     </div>

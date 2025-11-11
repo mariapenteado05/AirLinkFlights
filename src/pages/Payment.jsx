@@ -1,81 +1,80 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AiOutlineCreditCard } from "react-icons/ai";
 import { BsPaypal } from "react-icons/bs";
 import { toast } from "react-toastify";
-import { PriceDetails } from "../container";
+import { CompensationSlip } from "../components/PaymentSlip"; // componente separado
 
 const Payment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { flight, totalPassengers, passengers } = location.state || {};
 
-  const [paymentMethod, setPaymentMethod] = useState("credit"); // 'credit' ou 'ficha'
+  const ticketPrice = flight?.price || 0;
+  const totalPrice = ticketPrice * (totalPassengers || 1);
+
+  const [paymentMethod, setPaymentMethod] = useState("credit");
   const [cardType, setCardType] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardDate, setCardDate] = useState("");
   const [cardName, setCardName] = useState("");
-  const [reservationNumber, setReservationNumber] = useState(null);
 
-  const totalPrice = 1299.99;
+  const generateReservationNumber = () =>
+    `RSV-${Math.floor(100000 + Math.random() * 900000)}`;
 
-  const generateReservationNumber = () => {
-    const random = Math.floor(100000 + Math.random() * 900000);
-    return `RSV-${random}`;
-  };
-
-  const handleSubmit = (e) => {
+  const handleCreditPayment = (e) => {
     e.preventDefault();
 
-    if (paymentMethod === "credit") {
-      if (
-        !cardType.trim() ||
-        !cardName.trim() ||
-        !cardNumber.trim() ||
-        !cardDate.trim()
-      ) {
-        toast.warning("Por favor, preencha todos os dados do cartão.");
-        return;
-      }
+    if (!cardType || !cardNumber || !cardDate || !cardName) {
+      toast.warning("Por favor, preencha todos os dados do cartão.");
+      return;
     }
 
-    // Gera número de reserva
-    const newReservation = generateReservationNumber();
-    setReservationNumber(newReservation);
+    const reservationNumber = generateReservationNumber();
 
     toast.success("Pagamento confirmado com sucesso!");
-    navigate("/confirm", { state: { reservationNumber: newReservation } });
+    navigate("/confirm", {
+      state: {
+        reservationNumber,
+        flight,
+        totalPassengers,
+        passengers,
+        totalPrice,
+        paymentMethod: "Cartão de Crédito",
+        purchaseStatus: "Confirmada",
+      },
+    });
   };
 
-  const handlePrintSlip = () => {
-    const newReservation = generateReservationNumber();
-    setReservationNumber(newReservation);
+  const handleSlipPayment = () => {
+    const reservationNumber = generateReservationNumber();
 
-    // Abre janela com a ficha de compensação
-    const slipWindow = window.open("", "_blank");
-    slipWindow.document.write(`
-      <html>
-        <head><title>Ficha de Compensação</title></head>
-        <body style="font-family: Arial; padding: 20px;">
-          <h2>Ficha de Compensação - AirLink</h2>
-          <p><strong>Valor:</strong> R$ ${totalPrice.toFixed(2)}</p>
-          <p><strong>Nome do passageiro:</strong> ${cardName || "Cliente AirLink"}</p>
-          <p><strong>Número da reserva:</strong> ${newReservation}</p>
-          <p><strong>Banco conveniado:</strong> Banco AirLink 123</p>
-          <p><strong>Vencimento:</strong> ${new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
-          <hr/>
-          <p>Apresente esta ficha em um banco conveniado para efetuar o pagamento.</p>
-        </body>
-      </html>
-    `);
-    slipWindow.print();
+    // Pega o nome do primeiro passageiro
+    const passengerName = passengers?.[0] || "Cliente AirLink";
+
+    CompensationSlip({
+      reservationNumber,
+      totalPrice,
+      passengerName,
+    });
 
     toast.success("Ficha gerada com sucesso!");
-    navigate("/confirm", { state: { reservationNumber: newReservation } });
+    navigate("/confirm", {
+      state: {
+        reservationNumber,
+        flight,
+        totalPassengers,
+        passengers,
+        totalPrice,
+        paymentMethod: "Ficha de Compensação",
+        purchaseStatus: "Em análise",
+      },
+    });
   };
 
   return (
     <div className="px-8 w-full h-full flex lg:flex-row flex-col justify-between items-start mt-20 gap-10">
       <div className="w-full lg:w-[686px] flex flex-col items-start gap-10">
-        {/* Título */}
         <div className="flex flex-col items-start gap-2 w-full">
           <h1 className="titleh1">Forma de pagamento</h1>
           <p className="text-[#7C8DB0] text-base font-normal">
@@ -100,9 +99,9 @@ const Payment = () => {
           <label className="flex items-center gap-2">
             <input
               type="radio"
-              value="ficha"
-              checked={paymentMethod === "ficha"}
-              onChange={() => setPaymentMethod("ficha")}
+              value="slip"
+              checked={paymentMethod === "slip"}
+              onChange={() => setPaymentMethod("slip")}
             />
             <BsPaypal /> <span>Ficha de compensação</span>
           </label>
@@ -112,11 +111,9 @@ const Payment = () => {
         {paymentMethod === "credit" && (
           <form
             className="w-full flex flex-col gap-5 mt-5"
-            onSubmit={handleSubmit}
+            onSubmit={handleCreditPayment}
           >
-            <h2 className="text-[#6E7491] text-xl font-semibold">
-              Dados do cartão
-            </h2>
+            <h2 className="text-[#6E7491] text-xl font-semibold">Dados do cartão</h2>
             <select
               value={cardType}
               onChange={(e) => setCardType(e.target.value)}
@@ -160,34 +157,20 @@ const Payment = () => {
         )}
 
         {/* Ficha de compensação */}
-        {paymentMethod === "ficha" && (
+        {paymentMethod === "slip" && (
           <div className="flex flex-col gap-4 mt-5">
             <p className="text-[#7C8DB0]">
               Clique abaixo para gerar a ficha de compensação. Apresente-a em um
               banco conveniado para efetuar o pagamento.
             </p>
             <button
-              onClick={handlePrintSlip}
+              onClick={handleSlipPayment}
               className="bg-[#605DEC] text-white px-5 py-2 rounded hover:bg-[#4B48C6] transition-all duration-200"
             >
               Imprimir ficha de compensação
             </button>
           </div>
         )}
-
-        {/* Voltar */}
-        <div className="flex items-center gap-5 mt-10">
-          <Link to="/seat-selection">
-            <button className="py-2 px-4 border border-[#605DEC] text-[#605DEC] rounded hover:bg-[#605DEC] hover:text-white transition-all duration-200">
-              Voltar à seleção de assentos
-            </button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Painel lateral */}
-      <div className="mt-10 flex flex-col gap-10 justify-end items-start lg:items-end">
-        <PriceDetails />
       </div>
     </div>
   );
